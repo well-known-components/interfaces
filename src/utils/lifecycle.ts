@@ -19,7 +19,7 @@ function bindStopService(components: Record<string, IBaseComponent>) {
       .then(() => process.exit())
       .catch((e) => {
         process.stderr.write(e + '\n')
-        console.trace(e)
+        console.error(e)
         process.exit(1)
       })
   })
@@ -111,8 +111,7 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
 function asyncTopLevelExceptionHanler<T>(fn: () => Promise<T>): Promise<T> {
   return fn().catch((error) => {
     // print error and stacktrace
-    process.stderr.write(error + '\n')
-    console.trace()
+    console.error(error)
     // exit program with error
     process.exit(1)
   })
