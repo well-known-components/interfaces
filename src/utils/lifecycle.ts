@@ -18,7 +18,7 @@ function bindStopService(components: Record<string, IBaseComponent>) {
     stopAllComponents(components)
       .then(() => process.exit())
       .catch((e) => {
-        process.stderr.write(e + '\n')
+        process.stderr.write(e + "\n")
         console.error(e)
         process.exit(1)
       })
@@ -72,7 +72,9 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
     const component = components[c]
     if ((await components[c]) !== components[c]) {
       process.stderr.write(
-        "<<< Error initializing components. Component '" + c + "' is a Promise, it should be an object, did you miss an await in the initComponents?. >>>\n"
+        "<<< Error initializing components. Component '" +
+          c +
+          "' is a Promise, it should be an object, did you miss an await in the initComponents?. >>>\n"
       )
     }
     if (component.start && typeof component.start == "function") {
@@ -82,7 +84,11 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
         if (awaitable.catch) {
           // avoid unhanled catch error messages in node.
           // real catch happens below in `Promise.all(pending)`
-          awaitable.catch(() => void 0)
+          awaitable.catch((err) => {
+            process.stderr.write(
+              `<<< Error initializing component: ${JSON.stringify(c)}. Error will appear in the next line >>>\n${err}\n`
+            )
+          })
         }
       }
     }
