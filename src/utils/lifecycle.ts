@@ -4,6 +4,7 @@ function stopAllComponents(components: Record<string, IBaseComponent>) {
   const pending: PromiseLike<any>[] = []
   for (let c in components) {
     const component = components[c]
+    if (!component) throw new Error('Component is null: ' + c)
     if (component.stop && typeof component.stop == "function") {
       pending.push(component.stop())
     }
@@ -77,6 +78,7 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
           "' is a Promise, it should be an object, did you miss an await in the initComponents?. >>>\n"
       )
     }
+    if (!component) throw new Error('Null or empty components are not allowed: ' + c)
     if (component.start && typeof component.start == "function") {
       const awaitable = component.start(immutableStartOptions)
       if (awaitable && typeof awaitable == "object" && "then" in awaitable) {
