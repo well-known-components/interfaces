@@ -13,5 +13,5 @@ export namespace IDatabase {
  * @public
  */
 export interface IDatabase {
-  query<T>(sql: string): Promise<IDatabase.IQueryResult<T>>
+  query<T extends Record<string, any>>(sql: string): Promise<IDatabase.IQueryResult<T>>
 }
