@@ -248,12 +248,16 @@ export namespace Lifecycle {
           await componentsStarted
         }
       } catch (e) {
-        // gracefully stop all components
-        await program.stop()
-
-        // the following throw is handled by asyncTopLevelExceptionHanler
-        // exiting the program
-        throw e
+        try {
+          // gracefully stop all components
+          await program.stop()
+        } catch(err: any) {
+          console.error(err)
+        } finally {
+          // the following throw is handled by asyncTopLevelExceptionHanler
+          // exiting the program
+          throw e
+        }
       }
 
       return program
