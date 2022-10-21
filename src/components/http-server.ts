@@ -14,7 +14,7 @@ export namespace IHttpServerComponent {
   export type QueryParams = Record<string, any>
   export type UrlParams = Record<string, string | string[]>
   export type IRequest = fetch.Request
-  export type IResponse = ResponseInit & { body?: ResponseBody /* attachments: [] */ }
+  export type IResponse = fetch.ResponseInit & { body?: ResponseBody /* attachments: [] */ }
 
   export type DefaultContext<Context = {}> = Context & {
     request: IRequest

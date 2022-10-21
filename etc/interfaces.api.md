@@ -121,7 +121,7 @@ export namespace IHttpServerComponent {
     // (undocumented)
     export type IRequestHandler<Context = {}> = IMiddlewareAdapterHandler<DefaultContext<Context>, IResponse>;
     // (undocumented)
-    export type IResponse = ResponseInit & {
+    export type IResponse = fetch_2.ResponseInit & {
         body?: ResponseBody;
     };
     // (undocumented)
