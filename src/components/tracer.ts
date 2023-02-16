@@ -100,7 +100,7 @@ export type TraceContext<T = any> = {
    * The version of the trace parent specification (version) is 1 byte representing an 8-bit unsigned integer.
    * Version ff is invalid. The current specification assumes the version is set to 00.
    */
-  version: string
+  version: number
   /**
    * The ID of the whole trace forest and is used to uniquely identify a distributed trace through a system.
    * It is represented as a 16-byte array, for example, 4bf92f3577b34da6a3ce929d0e0e4736.
@@ -112,7 +112,7 @@ export type TraceContext<T = any> = {
    */
   parentId: string
   /** An 8-bit field that controls tracing flags such as sampling, trace level, etc. */
-  traceFlags: string
+  traceFlags: number
   /** Provides additional vendor-specific trace identification information across different distributed tracing systems in form of a key-value pair. */
   traceState?: Record<string, string>
   /** Additional customized data for the trace. */
