@@ -373,10 +373,10 @@ export type Trace = Pick<TraceContext, "traceId" | "version" | "parentId" | "tra
 export type TraceContext<T = any> = {
     id: string;
     name: string;
-    version: string;
+    version: number;
     traceId: string;
     parentId: string;
-    traceFlags: string;
+    traceFlags: number;
     traceState?: Record<string, string>;
     data: T;
 };
