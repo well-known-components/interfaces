@@ -326,6 +326,23 @@ export interface IStatusCheckCapableComponent {
     startupProbe?(): Promise<boolean>;
 }
 
+// @public (undocumented)
+export type ITracerComponent = {
+    span<T>(name: string, tracedFunction: () => T, traceContext?: Omit<TraceContext, "id" | "data" | "name">): T;
+    isInsideOfTraceSpan(): boolean;
+    getSpanId(): string;
+    getTrace(): Trace;
+    getTraceString(): string;
+    getTraceChild(): Trace;
+    getTraceChildString(): string;
+    getTraceState(): Readonly<TraceState | null>;
+    getTraceStateString(): string | undefined;
+    getContextData<T>(): Readonly<T | null>;
+    setContextData<T = any>(data: T): void;
+    setTraceStateProperty(key: string, value: string): void;
+    deleteTraceStateProperty(key: string): void;
+};
+
 // @public
 export namespace Lifecycle {
     // (undocumented)
@@ -348,6 +365,24 @@ export namespace Lifecycle {
     }): Promise<ComponentBasedProgram<Components>>;
     export function run<Components extends Record<string, any>>(config: ProgramConfig<Components>): PromiseLike<ComponentBasedProgram<Components>>;
 }
+
+// @public (undocumented)
+export type Trace = Pick<TraceContext, "traceId" | "version" | "parentId" | "traceFlags">;
+
+// @public (undocumented)
+export type TraceContext<T = any> = {
+    id: string;
+    name: string;
+    version: number;
+    traceId: string;
+    parentId: string;
+    traceFlags: number;
+    traceState?: Record<string, string>;
+    data: T;
+};
+
+// @public (undocumented)
+export type TraceState = Required<Pick<TraceContext, "traceState">>["traceState"];
 
 // (No @packageDocumentation comment for this package)
 
