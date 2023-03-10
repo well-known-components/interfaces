@@ -12,20 +12,6 @@ function stopAllComponents(components: Record<string, IBaseComponent>) {
   return Promise.all(pending)
 }
 
-// gracefully finalizes all the components on SIGTERM
-function bindStopService(components: Record<string, IBaseComponent>) {
-  process.on("SIGTERM", () => {
-    process.stdout.write("<<< SIGTERM received >>>\n")
-    stopAllComponents(components)
-      .then(() => process.exit())
-      .catch((e) => {
-        process.stderr.write(e + "\n")
-        console.error(e)
-        process.exit(1)
-      })
-  })
-}
-
 async function allSettled(promises: Array<Promise<any> | PromiseLike<any>>) {
   let mappedPromises = promises.map((p) => {
     let r = p.then((value: any) => {
@@ -98,8 +84,6 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
 
   // application started
   mutLive = true
-
-  bindStopService(components)
 
   if (pending.length == 0) return
 
@@ -218,12 +202,24 @@ export namespace Lifecycle {
 
       let componentsStarted: Promise<void> | undefined
 
+      const termHandler = () => {
+        process.stdout.write("<<< SIGTERM received >>>\n")
+        stopAllComponents(components)
+          .then(() => process.exit())
+          .catch((e) => {
+              process.stderr.write(e + "\n")
+              console.error(e)
+              process.exit(1)
+          })
+      }
+
       const program: EntryPointParameters<Components> = {
         get components() {
           return components
         },
         async stop(): Promise<void> {
           await stopAllComponents(components)
+          process.off('SIGTERM', termHandler)
         },
         async startComponents() {
           if (!componentsStarted) {
@@ -246,6 +242,8 @@ export namespace Lifecycle {
           process.stderr.write("Warning: startComponents was not called inside programEntryPoint.main function\n")
         } else {
           await componentsStarted
+          // gracefully finalizes all the components on SIGTERM
+          process.on("SIGTERM", termHandler)
         }
       } catch (e) {
         // gracefully stop all components
