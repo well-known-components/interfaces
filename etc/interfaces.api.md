@@ -6,7 +6,7 @@
 
 /// <reference types="node" />
 
-import type * as fetch_2 from 'node-fetch';
+import * as fetch_2 from 'node-fetch';
 import type { ParseUrlParams } from 'typed-url-params';
 import type * as stream from 'stream';
 
@@ -63,6 +63,12 @@ export interface IDatabase {
     // (undocumented)
     query<T extends Record<string, any>>(sql: string): Promise<IDatabase.IQueryResult<T>>;
 }
+
+// @alpha (undocumented)
+export type IFetchComponent = {
+    fetch(url: fetch_2.Request): Promise<fetch_2.Response>;
+    fetch(url: fetch_2.RequestInfo, init?: fetch_2.RequestInit): Promise<fetch_2.Response>;
+};
 
 // @alpha (undocumented)
 export namespace IHttpServerComponent {
