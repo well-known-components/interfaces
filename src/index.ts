@@ -10,6 +10,7 @@ export * from "./components/base-component"
 export * from "./components/status-checks"
 export * from "./components/metrics"
 export * from "./components/tracer"
+export * from "./components/fetcher"
 
 // This will be moved into a final repository once the api stabilizes
 export { Lifecycle }
