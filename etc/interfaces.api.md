@@ -64,10 +64,10 @@ export interface IDatabase {
     query<T extends Record<string, any>>(sql: string): Promise<IDatabase.IQueryResult<T>>;
 }
 
-// @alpha (undocumented)
+// @public (undocumented)
 export type IFetchComponent = {
     fetch(url: fetch_2.Request): Promise<fetch_2.Response>;
-    fetch(url: fetch_2.RequestInfo, init?: fetch_2.RequestInit): Promise<fetch_2.Response>;
+    fetch(url: fetch_2.RequestInfo, init?: RequestOptions): Promise<fetch_2.Response>;
 };
 
 // @alpha (undocumented)
@@ -371,6 +371,14 @@ export namespace Lifecycle {
     }): Promise<ComponentBasedProgram<Components>>;
     export function run<Components extends Record<string, any>>(config: ProgramConfig<Components>): PromiseLike<ComponentBasedProgram<Components>>;
 }
+
+// @public (undocumented)
+export type RequestOptions = fetch_2.RequestInit & {
+    abortController?: AbortController;
+    timeout?: number;
+    attempts?: number;
+    retryDelay?: number;
+};
 
 // @public (undocumented)
 export type Trace = Pick<TraceContext, "traceId" | "version" | "parentId" | "traceFlags">;
