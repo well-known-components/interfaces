@@ -66,8 +66,8 @@ export interface IDatabase {
 
 // @public (undocumented)
 export type IFetchComponent = {
-    fetch(url: fetch_2.Request): Promise<fetch_2.Response>;
-    fetch(url: fetch_2.RequestInfo, init?: RequestOptions): Promise<fetch_2.Response>;
+    fetch(url: Request_2): Promise<Response_2>;
+    fetch(url: Request_2, init?: RequestOptions): Promise<Response_2>;
 };
 
 // @alpha (undocumented)
@@ -372,6 +372,10 @@ export namespace Lifecycle {
     export function run<Components extends Record<string, any>>(config: ProgramConfig<Components>): PromiseLike<ComponentBasedProgram<Components>>;
 }
 
+// @alpha (undocumented)
+type Request_2 = fetch_2.Request | fetch_2.RequestInfo;
+export { Request_2 as Request }
+
 // @public (undocumented)
 export type RequestOptions = fetch_2.RequestInit & {
     abortController?: AbortController;
@@ -379,6 +383,10 @@ export type RequestOptions = fetch_2.RequestInit & {
     attempts?: number;
     retryDelay?: number;
 };
+
+// @alpha (undocumented)
+type Response_2 = fetch_2.Response;
+export { Response_2 as Response }
 
 // @public (undocumented)
 export type Trace = Pick<TraceContext, "traceId" | "version" | "parentId" | "traceFlags">;
@@ -397,6 +405,13 @@ export type TraceContext<T = any> = {
 
 // @public (undocumented)
 export type TraceState = Required<Pick<TraceContext, "traceState">>["traceState"];
+
+// Warnings were encountered during analysis:
+//
+// src/components/fetcher.ts:27:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Request" which is marked as @alpha
+// src/components/fetcher.ts:27:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Response" which is marked as @alpha
+// src/components/fetcher.ts:28:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Request" which is marked as @alpha
+// src/components/fetcher.ts:28:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Response" which is marked as @alpha
 
 // (No @packageDocumentation comment for this package)
 

@@ -11,9 +11,19 @@ export type RequestOptions = fetch.RequestInit & {
 }
 
 /**
+ * @alpha
+ */
+export type Response = fetch.Response
+
+/**
+ * @alpha
+ */
+export type Request = fetch.Request | fetch.RequestInfo
+
+/**
  * @public
  */
 export type IFetchComponent = {
-  fetch(url: fetch.Request): Promise<fetch.Response>
-  fetch(url: fetch.RequestInfo, init?: RequestOptions): Promise<fetch.Response>
+  fetch(url: Request): Promise<Response>
+  fetch(url: Request, init?: RequestOptions): Promise<Response>
 }
