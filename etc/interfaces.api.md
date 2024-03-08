@@ -231,6 +231,11 @@ export namespace IMetricsComponent {
     // (undocumented)
     export type MetricsRecordDefinition<K extends string> = Record<K, MetricDefinition>;
     // (undocumented)
+    export type Registry = {
+        contentType: string;
+        metrics(): Promise<string>;
+    };
+    // (undocumented)
     export type SummaryMetricDefinition = {
         type: SummaryType;
         help: string;
@@ -250,6 +255,7 @@ export interface IMetricsComponent<K extends string> {
     getValue(metricName: K): Promise<IMetricsComponent.ExportedMetricData>;
     increment(metricName: K, labels?: IMetricsComponent.Labels, value?: number): void;
     observe(metricName: K, labels: IMetricsComponent.Labels, value: number): void;
+    registry?: IMetricsComponent.Registry;
     reset(metricName: K): void;
     resetAll(): void;
     startTimer(metricName: K, labels?: IMetricsComponent.Labels): {

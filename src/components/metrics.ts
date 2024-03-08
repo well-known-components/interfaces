@@ -58,12 +58,22 @@ export namespace IMetricsComponent {
 
   export type MetricsRecordDefinition<K extends string> = Record<K, MetricDefinition>
   export type Labels = Record<string, string | number>
+
+  export type Registry = {
+    contentType: string
+    metrics(): Promise<string>
+  }
 }
 
 /**
  * @public
  */
 export interface IMetricsComponent<K extends string> {
+  /**
+   * Optional registry component, this will be used to expose the metrics for pulling
+   * (for example, for prometheus)
+   */
+  registry?: IMetricsComponent.Registry
   /**
    * startTimer returns an object with an "end" function that must be
    * called at the end of the measurement.
