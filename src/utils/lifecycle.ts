@@ -1,4 +1,4 @@
-import { IBaseComponent, STOP_COMPONENT } from "../components/base-component"
+import { IBaseComponent, STOP_COMPONENT, START_COMPONENT } from "../components/base-component"
 
 function stopAllComponents(components: Record<string, IBaseComponent>) {
   const pending: PromiseLike<any>[] = []
@@ -70,7 +70,7 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
       )
     }
     if (!component) throw new Error("Null or empty components are not allowed: " + c)
-    var startFn: IBaseComponent[START_COMPONENT] = undefined
+    var startFn: IBaseComponent[typeof START_COMPONENT] = undefined
 
     if (typeof component[START_COMPONENT] == "function") {
       startFn = component[START_COMPONENT].bind(component)
