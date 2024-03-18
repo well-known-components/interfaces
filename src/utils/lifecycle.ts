@@ -1,11 +1,16 @@
-import { IBaseComponent } from "../components/base-component"
+import { IBaseComponent, STOP_COMPONENT, START_COMPONENT } from "../components/base-component"
 
 function stopAllComponents(components: Record<string, IBaseComponent>) {
   const pending: PromiseLike<any>[] = []
   for (let c in components) {
     const component = components[c]
-    if (!component) throw new Error('Component is null: ' + c)
-    if (component.stop && typeof component.stop == "function") {
+    if (!component) throw new Error("Component is null: " + c)
+    if (typeof component[STOP_COMPONENT] == "function") {
+      pending.push(component[STOP_COMPONENT]())
+    }
+    // TODO: remove for 3.0.0
+    else if (typeof component.stop == "function") {
+      process.stderr.write("IBaseComponent.stop is deprecated. Use IBaseComponent[STOP_COMPONENT] instead")
       pending.push(component.stop())
     }
   }
@@ -61,12 +66,23 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
       process.stderr.write(
         "<<< Error initializing components. Component '" +
           c +
-          "' is a Promise, it should be an object, did you miss an await in the initComponents?. >>>\n"
+          "' is a Promise, it should be an object, did you miss an await in the initComponents?. >>>\n",
       )
     }
-    if (!component) throw new Error('Null or empty components are not allowed: ' + c)
-    if (component.start && typeof component.start == "function") {
-      const awaitable = component.start(immutableStartOptions)
+    if (!component) throw new Error("Null or empty components are not allowed: " + c)
+    var startFn: IBaseComponent[typeof START_COMPONENT] = undefined
+
+    if (typeof component[START_COMPONENT] == "function") {
+      startFn = component[START_COMPONENT].bind(component)
+    }
+    //TODO remove in 3.0
+    else if (component.start && typeof component.start == "function") {
+      process.stderr.write("IBaseComponent.start is deprecated. use IBaseComponent[START_COMPONENT] instead")
+      startFn = component.start.bind(component)
+    }
+
+    if (startFn) {
+      const awaitable = startFn(immutableStartOptions)
       if (awaitable && typeof awaitable == "object" && "then" in awaitable) {
         pending.push(awaitable)
         if (awaitable.catch) {
@@ -74,7 +90,9 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
           // real catch happens below in `Promise.all(pending)`
           awaitable.catch((err) => {
             process.stderr.write(
-              `<<< Error initializing component: ${JSON.stringify(c)}. Error will appear in the next line >>>\n${err}\n`
+              `<<< Error initializing component: ${JSON.stringify(
+                c,
+              )}. Error will appear in the next line >>>\n${err}\n`,
             )
           })
         }
@@ -190,7 +208,7 @@ export namespace Lifecycle {
    * expression of your program.
    */
   export function run<Components extends Record<string, any>>(
-    config: ProgramConfig<Components>
+    config: ProgramConfig<Components>,
   ): PromiseLike<ComponentBasedProgram<Components>> {
     return asyncTopLevelExceptionHanler(async () => {
       // pick a componentInitializer
@@ -207,9 +225,9 @@ export namespace Lifecycle {
         stopAllComponents(components)
           .then(() => process.exit())
           .catch((e) => {
-              process.stderr.write(e + "\n")
-              console.error(e)
-              process.exit(1)
+            process.stderr.write(e + "\n")
+            console.error(e)
+            process.exit(1)
           })
       }
 
@@ -219,7 +237,7 @@ export namespace Lifecycle {
         },
         async stop(): Promise<void> {
           await stopAllComponents(components)
-          process.off('SIGTERM', termHandler)
+          process.off("SIGTERM", termHandler)
         },
         async startComponents() {
           if (!componentsStarted) {
@@ -249,7 +267,7 @@ export namespace Lifecycle {
         try {
           // gracefully stop all components
           await program.stop()
-        } catch(err: any) {
+        } catch (err: any) {
           console.error(err)
         } finally {
           // the following throw is handled by asyncTopLevelExceptionHanler

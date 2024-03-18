@@ -25,7 +25,11 @@ export namespace IBaseComponent {
 
 // @public
 export interface IBaseComponent {
+    [START_COMPONENT]?: (startOptions: IBaseComponent.ComponentStartOptions) => Promise<void>;
+    [STOP_COMPONENT]?: () => Promise<void>;
+    // @deprecated
     start?: (startOptions: IBaseComponent.ComponentStartOptions) => Promise<void>;
+    // @deprecated
     stop?: () => Promise<void>;
 }
 
@@ -394,6 +398,12 @@ export type RequestOptions = fetch_2.RequestInit & {
 type Response_2 = fetch_2.Response;
 export { Response_2 as Response }
 
+// @public
+export const START_COMPONENT: unique symbol;
+
+// @public
+export const STOP_COMPONENT: unique symbol;
+
 // @public (undocumented)
 export type Trace = Pick<TraceContext, "traceId" | "version" | "parentId" | "traceFlags">;
 
@@ -414,10 +424,10 @@ export type TraceState = Required<Pick<TraceContext, "traceState">>["traceState"
 
 // Warnings were encountered during analysis:
 //
-// src/components/fetcher.ts:27:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Request" which is marked as @alpha
-// src/components/fetcher.ts:27:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Response" which is marked as @alpha
-// src/components/fetcher.ts:28:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Request" which is marked as @alpha
-// src/components/fetcher.ts:28:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Response" which is marked as @alpha
+// src/components/fetcher.ts:27:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Request_2" which is marked as @alpha
+// src/components/fetcher.ts:27:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Response_2" which is marked as @alpha
+// src/components/fetcher.ts:28:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Request_2" which is marked as @alpha
+// src/components/fetcher.ts:28:3 - (ae-incompatible-release-tags) The symbol "fetch" is marked as @public, but its signature references "Response_2" which is marked as @alpha
 
 // (No @packageDocumentation comment for this package)
 

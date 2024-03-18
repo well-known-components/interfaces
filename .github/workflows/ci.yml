@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: 14.x
       - name: install
-        run:  npm install
+        run:  yarn install
       - name: make
         run:  make build
       - name: Publish
