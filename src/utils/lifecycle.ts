@@ -1,20 +1,28 @@
 import { IBaseComponent, STOP_COMPONENT, START_COMPONENT } from "../components/base-component"
 
-function stopAllComponents(components: Record<string, IBaseComponent>) {
-  const pending: PromiseLike<any>[] = []
-  for (let c in components) {
+const DEBUG = !!process.env.DEBUG
+
+function log(level: 'DEBUG' | 'WARN' | 'INFO' | 'ERROR', message: string) {
+  if (level == 'DEBUG' && !DEBUG) return
+  process.stderr.write(new Date().toISOString() + " [" + level + "] (well-known-components/interfaces): " + message + "\n")
+}
+
+async function stopAllComponents(components: Record<string, IBaseComponent>) {
+  const reverseKeys = Object.keys(components).reverse()
+  for (let c of reverseKeys) {
     const component = components[c]
     if (!component) throw new Error("Component is null: " + c)
     if (typeof component[STOP_COMPONENT] == "function") {
-      pending.push(component[STOP_COMPONENT]())
+      log('INFO', `Stopping component ${c}`)
+      await component[STOP_COMPONENT]()
     }
     // TODO: remove for 3.0.0
     else if (typeof component.stop == "function") {
-      process.stderr.write("IBaseComponent.stop is deprecated. Use IBaseComponent[STOP_COMPONENT] instead")
-      pending.push(component.stop())
+      log('INFO', `Stopping component ${c}`)
+      log('WARN', "IBaseComponent.stop is deprecated (in " +c+ ".stop). Use IBaseComponent[STOP_COMPONENT] instead")
+      await component.stop()
     }
   }
-  return Promise.all(pending)
 }
 
 async function allSettled(promises: Array<Promise<any> | PromiseLike<any>>) {
@@ -42,7 +50,7 @@ async function allSettled(promises: Array<Promise<any> | PromiseLike<any>>) {
 
 // gracefully finalizes all the components on SIGTERM
 async function startComponentsLifecycle(components: Record<string, IBaseComponent>): Promise<void> {
-  process.stdout.write("<<< Starting components >>>\n")
+  log('INFO', "Starting components")
   const pending: PromiseLike<any>[] = []
 
   let mutStarted = false
@@ -63,10 +71,10 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
   for (let c in components) {
     const component = components[c]
     if ((await components[c]) !== components[c]) {
-      process.stderr.write(
-        "<<< Error initializing components. Component '" +
+      log('ERROR',
+        "Error initializing components. Component '" +
           c +
-          "' is a Promise, it should be an object, did you miss an await in the initComponents?. >>>\n",
+          "' is a Promise, it should be an object, did you miss an await in the initComponents?."
       )
     }
     if (!component) throw new Error("Null or empty components are not allowed: " + c)
@@ -77,22 +85,24 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
     }
     //TODO remove in 3.0
     else if (component.start && typeof component.start == "function") {
-      process.stderr.write("IBaseComponent.start is deprecated. use IBaseComponent[START_COMPONENT] instead")
+      log("WARN", c + ".start is deprecated (in " +c+ ".stop). use IBaseComponent[START_COMPONENT] instead")
       startFn = component.start.bind(component)
     }
 
     if (startFn) {
+      log('DEBUG', `Starting component ${c}`)
       const awaitable = startFn(immutableStartOptions)
       if (awaitable && typeof awaitable == "object" && "then" in awaitable) {
         pending.push(awaitable)
+        await awaitable
         if (awaitable.catch) {
           // avoid unhanled catch error messages in node.
           // real catch happens below in `Promise.all(pending)`
           awaitable.catch((err) => {
-            process.stderr.write(
-              `<<< Error initializing component: ${JSON.stringify(
+            log('ERROR',
+              `Error initializing component: ${JSON.stringify(
                 c,
-              )}. Error will appear in the next line >>>\n${err}\n`,
+              )}. Error will appear in the next line\n${err}\n`,
             )
           })
         }
@@ -109,7 +119,7 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
     await Promise.all(pending)
     mutStarted = true
   } catch (e) {
-    process.stderr.write("<<< Error initializing components. Stopping components and closing application. >>>\n")
+    log("ERROR", "Error initializing components. Stopping components and closing application.")
     await allSettled(pending)
     throw e
   }
@@ -221,11 +231,11 @@ export namespace Lifecycle {
       let componentsStarted: Promise<void> | undefined
 
       const termHandler = () => {
-        process.stdout.write("<<< SIGTERM received >>>\n")
+        log('INFO', "SIGTERM received")
         stopAllComponents(components)
           .then(() => process.exit())
           .catch((e) => {
-            process.stderr.write(e + "\n")
+            log('ERROR', e)
             console.error(e)
             process.exit(1)
           })
@@ -244,7 +254,7 @@ export namespace Lifecycle {
             // start components & ports
             componentsStarted = startComponentsLifecycle(components)
           } else {
-            process.stderr.write("Warning: startComponents must be called once\n")
+            log('WARN', "Warning: startComponents must be called once\n")
           }
 
           return componentsStarted
@@ -253,11 +263,11 @@ export namespace Lifecycle {
 
       try {
         // wire adapters
-        process.stdout.write("<<< Wiring app >>>\n")
+        log('INFO', "Wiring app")
         await config.main(program)
 
         if (!componentsStarted) {
-          process.stderr.write("Warning: startComponents was not called inside programEntryPoint.main function\n")
+          log('WARN', "Warning: startComponents was not called inside programEntryPoint.main function\n")
         } else {
           await componentsStarted
           // gracefully finalizes all the components on SIGTERM
