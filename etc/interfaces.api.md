@@ -369,16 +369,12 @@ export namespace Lifecycle {
     // (undocumented)
     export type EntryPointParameters<Components> = ComponentBasedProgram<Components> & {
         startComponents(): Promise<void>;
+        beforeStopComponents(callback: () => Promise<void>): void;
     };
     export type ProgramConfig<Components> = {
         main: (program: EntryPointParameters<Components>) => Promise<any>;
         initComponents: () => Promise<Components>;
     };
-    // @deprecated
-    export function programEntryPoint<Components extends Record<string, any>>(config: {
-        main: (components: Components) => Promise<any>;
-        initComponents: () => Promise<Components>;
-    }): Promise<ComponentBasedProgram<Components>>;
     export function run<Components extends Record<string, any>>(config: ProgramConfig<Components>): PromiseLike<ComponentBasedProgram<Components>>;
 }
 

@@ -19,7 +19,7 @@ async function stopAllComponents(components: Record<string, IBaseComponent>) {
     // TODO: remove for 3.0.0
     else if (typeof component.stop == "function") {
       log('INFO', `Stopping component ${c}`)
-      log('WARN', "IBaseComponent.stop is deprecated (in " +c+ ".stop). Use IBaseComponent[STOP_COMPONENT] instead")
+      log('WARN', "IBaseComponent.stop is deprecated (in " + c + ".stop). Use IBaseComponent[STOP_COMPONENT] instead")
       await component.stop()
     }
   }
@@ -73,8 +73,8 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
     if ((await components[c]) !== components[c]) {
       log('ERROR',
         "Error initializing components. Component '" +
-          c +
-          "' is a Promise, it should be an object, did you miss an await in the initComponents?."
+        c +
+        "' is a Promise, it should be an object, did you miss an await in the initComponents?."
       )
     }
     if (!component) throw new Error("Null or empty components are not allowed: " + c)
@@ -85,7 +85,7 @@ async function startComponentsLifecycle(components: Record<string, IBaseComponen
     }
     //TODO remove in 3.0
     else if (component.start && typeof component.start == "function") {
-      log("WARN", c + ".start is deprecated (in " +c+ ".stop). use IBaseComponent[START_COMPONENT] instead")
+      log("WARN", c + ".start is deprecated (in " + c + ".stop). use IBaseComponent[START_COMPONENT] instead")
       startFn = component.start.bind(component)
     }
 
@@ -159,7 +159,15 @@ export namespace Lifecycle {
   }
 
   export type EntryPointParameters<Components> = ComponentBasedProgram<Components> & {
+    /**
+     * The program must wire all components together and then call startComponents
+     * before exiting the main() function. Otherwise it will raise an error.
+     */
     startComponents(): Promise<void>
+    /**
+     * The program can register handlers to be run before stopping all components
+     */
+    beforeStopComponents(callback: () => Promise<void>): void
   }
 
   /**
@@ -196,26 +204,6 @@ export namespace Lifecycle {
   /**
    * Program entry point, this should be the one and only top level
    * expression of your program.
-   *
-   * @deprecated Lifecycle.programEntryPoint is deprecated, please use Lifecycle.run()
-   */
-  export async function programEntryPoint<Components extends Record<string, any>>(config: {
-    main: (components: Components) => Promise<any>
-    initComponents: () => Promise<Components>
-  }): Promise<ComponentBasedProgram<Components>> {
-    return run({
-      ...config,
-      async main(program) {
-        const r = await config.main(program.components)
-        await program.startComponents()
-        return r
-      },
-    })
-  }
-
-  /**
-   * Program entry point, this should be the one and only top level
-   * expression of your program.
    */
   export function run<Components extends Record<string, any>>(
     config: ProgramConfig<Components>,
@@ -225,14 +213,34 @@ export namespace Lifecycle {
       const componentInitializer = config.initComponents
 
       // init ports & components
-      process.stdout.write("<<< Initializing components >>>\n")
+      log("INFO", "Initializing components")
       const components: Components = Object.freeze(await componentInitializer())
 
       let componentsStarted: Promise<void> | undefined
 
-      const termHandler = () => {
-        log('INFO', "SIGTERM received")
-        stopAllComponents(components)
+      // the program can register some handlers to be run before stopping all components
+      const beforeStopComponentHandlers: Array<() => Promise<void>> = []
+      const beforeStopComponents = async () => {
+        while (beforeStopComponentHandlers.length) {
+          try {
+            await (beforeStopComponentHandlers.shift()!)()
+          } catch (e: any) {
+            log('ERROR', e)
+            console.error(e)
+          }
+        }
+      }
+
+      async function stopProgram() {
+        process.off("SIGTERM", termHandler)
+        process.off("SIGINT", termHandler)
+        await beforeStopComponents()
+        await stopAllComponents(components)
+      }
+
+      function termHandler() {
+        log('INFO', "termination signal received")
+        stopProgram()
           .then(() => process.exit())
           .catch((e) => {
             log('ERROR', e)
@@ -245,13 +253,15 @@ export namespace Lifecycle {
         get components() {
           return components
         },
+        beforeStopComponents(callback) {
+          beforeStopComponentHandlers.push(callback)
+        },
         async stop(): Promise<void> {
-          await stopAllComponents(components)
-          process.off("SIGTERM", termHandler)
+          await stopProgram()
         },
         async startComponents() {
           if (!componentsStarted) {
-            // start components & ports
+            // start components
             componentsStarted = startComponentsLifecycle(components)
           } else {
             log('WARN', "Warning: startComponents must be called once\n")
@@ -270,9 +280,11 @@ export namespace Lifecycle {
           log('WARN', "Warning: startComponents was not called inside programEntryPoint.main function\n")
         } else {
           await componentsStarted
-          // gracefully finalizes all the components on SIGTERM
-          process.on("SIGTERM", termHandler)
         }
+
+        // gracefully finalizes all the components on SIGINT&SIGTERM
+        process.on("SIGTERM", termHandler)
+        process.on("SIGINT", termHandler)
       } catch (e) {
         try {
           // gracefully stop all components
